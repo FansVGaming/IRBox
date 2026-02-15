@@ -1,0 +1,251 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to create release for (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            target: x86_64-apple-darwin
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Clone IRBox repository
+        run: |
+          git clone https://github.com/frank-vpl/IRBox.git
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          # Try multiple webkit package names for compatibility
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf || \
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf || \
+          sudo apt-get install -y libwebkit2gtk-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install webkit2png
+
+      - name: Install frontend dependencies
+        working-directory: IRBox
+        run: npm install
+
+      - name: Install Tauri CLI
+        working-directory: IRBox
+        run: cargo install tauri-cli --version "^2"
+
+      - name: Download core executables (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        working-directory: IRBox
+        run: |
+          chmod +x cores.sh
+          echo "Running cores.sh for target: ${{ matrix.target }}"
+          ./cores.sh ${{ matrix.target }}
+          echo "Contents of pcores directory:"
+          ls -la src-tauri/pcores/ || echo "pcores directory not found"
+
+      - name: Download core executables (Windows)
+        if: matrix.os == 'windows-latest'
+        working-directory: IRBox
+        run: |
+          echo "Running cores.bat for target: ${{ matrix.target }}"
+          ./cores.bat ${{ matrix.target }}
+          echo "Contents of pcores directory:"
+          if (Test-Path "src-tauri\pcores") {
+            Get-ChildItem "src-tauri\pcores"
+          } else {
+            Write-Host "pcores directory not found"
+          }
+        shell: pwsh
+
+      - name: Verify pcores before build (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        working-directory: IRBox
+        run: |
+          echo "Checking pcores directory before build:"
+          if [ -d "src-tauri/pcores" ]; then
+            ls -la src-tauri/pcores/
+            echo "pcores directory exists with contents"
+          else
+            echo "ERROR: pcores directory not found!"
+            exit 1
+          fi
+          echo "Checking for required binaries:"
+          if [ -f "src-tauri/pcores/sing-box-${{ matrix.target }}" ] || [ -f "src-tauri/pcores/sing-box-${{ matrix.target }}.exe" ]; then
+            echo "Found sing-box binary"
+          else
+            echo "ERROR: sing-box binary not found for target ${{ matrix.target }}!"
+            exit 1
+          fi
+          if [ -f "src-tauri/pcores/xray-${{ matrix.target }}" ] || [ -f "src-tauri/pcores/xray-${{ matrix.target }}.exe" ]; then
+            echo "Found xray binary"
+          else
+            echo "ERROR: xray binary not found for target ${{ matrix.target }}!"
+            exit 1
+          fi
+
+      - name: Verify pcores before build (Windows)
+        if: matrix.os == 'windows-latest'
+        working-directory: IRBox
+        run: |
+          echo "Checking pcores directory before build:"
+          if (Test-Path "src-tauri\pcores") {
+            Get-ChildItem "src-tauri\pcores"
+            Write-Host "pcores directory exists with contents"
+          } else {
+            Write-Host "ERROR: pcores directory not found!"
+            exit 1
+          }
+          echo "Checking for required binaries:"
+          if (Test-Path "src-tauri\pcores\sing-box-${{ matrix.target }}.exe") {
+            Write-Host "Found sing-box binary"
+          } else {
+            Write-Host "ERROR: sing-box binary not found for target ${{ matrix.target }}!"
+            exit 1
+          }
+          if (Test-Path "src-tauri\pcores\xray-${{ matrix.target }}.exe") {
+            Write-Host "Found xray binary"
+          } else {
+            Write-Host "ERROR: xray binary not found for target ${{ matrix.target }}!"
+            exit 1
+          }
+        shell: pwsh
+
+      - name: Build Tauri app
+        working-directory: IRBox
+        run: cargo tauri build --target ${{ matrix.target }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-artifacts
+          path: |
+            IRBox/src-tauri/target/${{ matrix.target }}/release/bundle/**
+          retention-days: 30
+
+  release:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Display structure of downloaded artifacts
+        run: |
+          ls -R artifacts/
+      
+      - name: Get tag name
+        id: get_tag
+        run: |
+          if [[ $GITHUB_EVENT_NAME == 'workflow_dispatch' ]]; then
+            echo "TAG_NAME=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          else
+            echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          fi
+        shell: bash
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          name: IRBox ${{ env.TAG_NAME }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/*-artifacts/**/*IRBox*.dmg
+            artifacts/*-artifacts/**/*IRBox*.exe
+            artifacts/*-artifacts/**/*IRBox*.msi
+            artifacts/*-artifacts/**/*IRBox*.AppImage
+            artifacts/*-artifacts/**/*IRBox*.deb
+            artifacts/*-artifacts/**/*IRBox*.rpm
+          body: |
+            ## IRBox Release ${{ env.TAG_NAME }}
+            
+            Automated release of IRBox client application.
+            
+            ### What's Changed
+            - Built for multiple platforms: Windows, macOS, and Linux
+            - Includes sing-box and xray-core executables
+            - Tauri-based desktop application
+            
+            ### Assets
+            This release includes installers/packages for:
+            - Windows (x86_64)
+            - macOS (Intel and Apple Silicon)
+            - Linux (x86_64 and ARM64)
+            
+            ### System Requirements
+            - Windows 10 or later
+            - macOS 10.15 or later
+            - Linux with glibc 2.17 or later
+            
+            ## Installing & Running IRBox on macOS
+            
+            ### 1. Install IRBox
+            1. Double-click the downloaded `.dmg` file.
+            2. Move **IRBox** into the **Applications** folder.
+            3. Open it from Applications like any standard Mac app.
+            
+            > ℹ️ IRBox starts in **Proxy Mode** by default — no additional permissions are required.
+            
+            ---
+            
+            ## Enabling TUN Mode (Routes All Traffic)
+            
+            When switching to **TUN Mode**, IRBox needs elevated system privileges to manage network traffic.
+            
+            You can enable it in one of the following ways:
+            
+            ### Method 1 — Grant Admin Access from Inside the App
+            1. Launch **IRBox**
+            2. Navigate to **Settings → VPN Mode**
+            3. Choose **TUN**
+            4. Click **Run as Administrator**
+            
+            ### Method 2 — Start via Terminal
+            Use the command below:
+            
+            ```bash
+            sudo /Applications/IRBox.app/Contents/MacOS/IRBox
+            ```
+            
+            ### Installation
+            Download the appropriate package for your platform and follow the installation instructions.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
