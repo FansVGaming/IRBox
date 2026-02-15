@@ -1,0 +1,36 @@
+[package]
+name = "irbox"
+version = "1.0.0"
+description = "Fast VPN client for xray/sing-box"
+authors = ["IranGuard"]
+edition = "2021"
+
+[lib]
+name = "irbox"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-deep-link = "2.4.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+base64 = "0.21"
+url = "2"
+percent-encoding = "2"
+uuid = { version = "1", features = ["v4"] }
+log = "0.4"
+env_logger = "0.10"
+anyhow = "1"
+dirs = "5"
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+tauri-plugin-single-instance = { version = "2.4.0", features = ["deep-link"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+winreg = "0.52"

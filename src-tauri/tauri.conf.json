@@ -1,0 +1,55 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "IRBox",
+  "version": "1.0.0",
+  "identifier": "com.iran.irbox",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "fullscreen": false,
+        "resizable": true,
+        "title": "IRBox",
+        "width": 960,
+        "height": 640,
+        "minWidth": 700,
+        "minHeight": 500
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["irbox"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.png"
+    ],
+    "externalBin": [
+      "pcores/sing-box",
+      "pcores/xray"
+    ],
+    "license": "GPL-3.0",
+    "licenseFile": "../LICENSE",
+    "publisher": "IranGuard",
+    "windows": {
+      "nsis": {
+        "installerHooks": "nsis-m.nsi"
+      }
+    }
+  }
+}

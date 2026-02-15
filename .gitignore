@@ -1,0 +1,13 @@
+node_modules/
+package-lock.json
+dist/
+src-tauri/target/
+src-tauri/pcores/*.exe
+src-tauri/pcores/*.dll
+.vscode/
+.idea/
+*.swp
+*.swo
+*.log
+.env
+.env.*

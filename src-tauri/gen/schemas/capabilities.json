@@ -1,0 +1,42 @@
+{
+    "default": {
+        "identifier": "default",
+        "description": "Capability for the main window",
+        "local": true,
+        "windows": [
+            "main"
+        ],
+        "permissions": [
+            "core:default",
+            {
+                "identifier": "shell:allow-execute",
+                "allow": [
+                    {
+                        "args": true,
+                        "name": "pcores/sing-box",
+                        "sidecar": true
+                    },
+                    {
+                        "args": true,
+                        "name": "pcores/xray",
+                        "sidecar": true
+                    }
+                ]
+            },
+            "shell:allow-spawn",
+            "shell:allow-stdin-write",
+            {
+                "identifier": "shell:allow-open",
+                "allow": [
+                    {
+                        "url": "https://*"
+                    },
+                    {
+                        "url": "http://*"
+                    }
+                ]
+            },
+            "deep-link:default"
+        ]
+    }
+}
