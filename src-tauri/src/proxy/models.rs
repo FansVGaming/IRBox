@@ -10,6 +10,9 @@ pub enum Protocol {
     Trojan,
     Hysteria2,
     Tuic,
+    Ssh,
+    WireGuard,
+    Tun,
 }
 
 /// Transport type
@@ -17,10 +20,13 @@ pub enum Protocol {
 #[serde(rename_all = "lowercase")]
 pub enum Transport {
     Tcp,
+    Kcp,
     Ws,
     Grpc,
     Http,
     Quic,
+    XHttp,
+    HttpUpgrade,
 }
 
 /// TLS settings
@@ -32,6 +38,119 @@ pub struct TlsSettings {
     pub alpn: Vec<String>,
     pub fingerprint: Option<String>,
     pub reality: Option<RealitySettings>,
+    // Additional TLS fields
+    pub disable_sni: bool,
+    pub min_version: Option<String>,
+    pub max_version: Option<String>,
+    pub cipher_suites: Vec<String>,
+    pub curve_preferences: Vec<String>,
+    pub certificate: Option<String>,
+    pub certificate_path: Option<String>,
+    pub certificate_public_key_sha256: Vec<String>,
+    pub client_certificate: Option<String>,
+    pub client_certificate_path: Option<String>,
+    pub client_key: Option<String>,
+    pub client_key_path: Option<String>,
+    pub utls_enabled: bool,
+}
+
+/// SSH settings
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SshSettings {
+    pub user: Option<String>,
+    pub password: Option<String>,
+    pub private_key: Option<String>,
+    pub private_key_path: Option<String>,
+    pub private_key_passphrase: Option<String>,
+    pub host_key: Option<Vec<String>>,
+    pub host_key_algorithms: Vec<String>,
+    pub client_version: Option<String>,
+}
+
+/// WireGuard Peer settings
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct WireGuardPeer {
+    pub address: String,
+    pub port: Option<u16>,
+    pub public_key: String,
+    pub pre_shared_key: Option<String>,
+    pub allowed_ips: Vec<String>,
+    pub persistent_keepalive_interval: Option<u32>,
+    pub reserved: Option<Vec<u8>>,
+}
+
+/// WireGuard settings
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct WireGuardSettings {
+    pub system: Option<bool>,
+    pub name: Option<String>,
+    pub mtu: Option<u32>,
+    pub address: Vec<String>,
+    pub private_key: String,
+    pub listen_port: Option<u16>,
+    pub peers: Vec<WireGuardPeer>,
+    pub udp_timeout: Option<String>,
+    pub workers: Option<u32>,
+}
+
+/// TUN platform HTTP proxy settings
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct TunHttpProxy {
+    pub enabled: Option<bool>,
+    pub server: Option<String>,
+    pub server_port: Option<u16>,
+    pub bypass_domain: Option<Vec<String>>,
+    pub match_domain: Option<Vec<String>>,
+}
+
+/// TUN platform settings
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct TunPlatform {
+    pub http_proxy: Option<TunHttpProxy>,
+}
+
+/// TUN settings
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct TunSettings {
+    pub interface_name: Option<String>,
+    pub address: Vec<String>,
+    pub mtu: Option<u32>,
+    pub auto_route: Option<bool>,
+    pub iproute2_table_index: Option<u32>,
+    pub iproute2_rule_index: Option<u32>,
+    pub auto_redirect: Option<bool>,
+    pub auto_redirect_input_mark: Option<String>,
+    pub auto_redirect_output_mark: Option<String>,
+    pub auto_redirect_reset_mark: Option<String>,
+    pub auto_redirect_nfqueue: Option<u32>,
+    pub auto_redirect_iproute2_fallback_rule_index: Option<u32>,
+    pub exclude_mptcp: Option<bool>,
+    pub loopback_address: Vec<String>,
+    pub strict_route: Option<bool>,
+    pub route_address: Vec<String>,
+    pub route_exclude_address: Vec<String>,
+    pub route_address_set: Vec<String>,
+    pub route_exclude_address_set: Vec<String>,
+    pub endpoint_independent_nat: Option<bool>,
+    pub udp_timeout: Option<String>,
+    pub stack: Option<String>,
+    pub include_interface: Vec<String>,
+    pub exclude_interface: Vec<String>,
+    pub include_uid: Vec<u32>,
+    pub include_uid_range: Vec<String>,
+    pub exclude_uid: Vec<u32>,
+    pub exclude_uid_range: Vec<String>,
+    pub include_android_user: Vec<i32>,
+    pub include_package: Vec<String>,
+    pub exclude_package: Vec<String>,
+    pub platform: Option<TunPlatform>,
+    // Deprecated fields (included for completeness but typically not used)
+    pub inet4_address: Vec<String>,
+    pub inet6_address: Vec<String>,
+    pub inet4_route_address: Vec<String>,
+    pub inet6_route_address: Vec<String>,
+    pub inet4_route_exclude_address: Vec<String>,
+    pub inet6_route_exclude_address: Vec<String>,
 }
 
 /// VLESS Reality settings
@@ -54,6 +173,36 @@ pub struct GrpcSettings {
     pub service_name: String,
 }
 
+/// XHTTP settings
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct XHttpSettings {
+    pub host: Option<String>,
+    pub path: String,
+    pub mode: String,
+}
+
+/// HTTP Upgrade settings
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct HttpUpgradeSettings {
+    pub host: Option<String>,
+    pub path: String,
+}
+
+/// KCP settings
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct KcpSettings {
+    pub header_type: String,
+    pub seed: Option<String>,
+}
+
+/// QUIC settings
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct QuicSettings {
+    pub header_type: String,
+    pub quic_security: String,
+    pub key: String,
+}
+
 /// A single proxy server
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Server {
@@ -69,11 +218,18 @@ pub struct Server {
     pub method: Option<String>,     // ss encryption method
     pub flow: Option<String>,       // vless flow (xtls-rprx-vision)
     pub alter_id: Option<u32>,      // vmess
+    pub ssh_settings: Option<SshSettings>, // ssh
+    pub wireguard_settings: Option<WireGuardSettings>, // wireguard
+    pub tun_settings: Option<TunSettings>, // tun
 
     // Transport
     pub transport: Transport,
     pub ws: Option<WsSettings>,
     pub grpc: Option<GrpcSettings>,
+    pub xhttp: Option<XHttpSettings>,
+    pub httpupgrade: Option<HttpUpgradeSettings>,
+    pub kcp: Option<KcpSettings>,
+    pub quic: Option<QuicSettings>,
 
     // TLS
     pub tls: TlsSettings,

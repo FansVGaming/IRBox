@@ -11,3 +11,5 @@ src-tauri/pcores/*.dll
 *.log
 .env
 .env.*
+x2j/
+dev/

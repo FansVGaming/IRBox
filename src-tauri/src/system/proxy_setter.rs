@@ -135,16 +135,78 @@ mod linux {
     use std::process::Command;
 
     pub fn set_proxy(host: &str, port: u16) -> Result<()> {
-        let _ = Command::new("gsettings").args(["set", "org.gnome.system.proxy", "mode", "manual"]).output();
-        let _ = Command::new("gsettings").args(["set", "org.gnome.system.proxy.http", "host", host]).output();
-        let _ = Command::new("gsettings").args(["set", "org.gnome.system.proxy.http", "port", &port.to_string()]).output();
-        let _ = Command::new("gsettings").args(["set", "org.gnome.system.proxy.https", "host", host]).output();
-        let _ = Command::new("gsettings").args(["set", "org.gnome.system.proxy.https", "port", &port.to_string()]).output();
+        let port_str = port.to_string();
+        let proxy_url = format!("http://{}:{}", host, port);
+        
+        // Set environment variables for terminal and other applications (works on all Linux)
+        std::env::set_var("http_proxy", &proxy_url);
+        std::env::set_var("https_proxy", &proxy_url);
+        std::env::set_var("HTTP_PROXY", &proxy_url);
+        std::env::set_var("HTTPS_PROXY", &proxy_url);
+        
+        // Set GNOME proxy settings if gsettings is available
+        if Command::new("gsettings").arg("--version").output().is_ok() {
+            let _ = Command::new("gsettings").args(["set", "org.gnome.system.proxy", "mode", "manual"]).output();
+            let _ = Command::new("gsettings").args(["set", "org.gnome.system.proxy.http", "host", host]).output();
+            let _ = Command::new("gsettings").args(["set", "org.gnome.system.proxy.http", "port", &port_str]).output();
+            let _ = Command::new("gsettings").args(["set", "org.gnome.system.proxy.https", "host", host]).output();
+            let _ = Command::new("gsettings").args(["set", "org.gnome.system.proxy.https", "port", &port_str]).output();
+        }
+        
+        // Set KDE proxy settings if kwriteconfig5 is available
+        if Command::new("kwriteconfig5").arg("--help").output().is_ok() {
+            let _ = Command::new("kwriteconfig5").args(["--file", "kioslaverc", "--group", "Proxy Settings", "--key", "ProxyType", "1"]).output();
+            let _ = Command::new("kwriteconfig5").args(["--file", "kioslaverc", "--group", "http", "--key", "Proxy", &proxy_url]).output();
+            let _ = Command::new("kwriteconfig5").args(["--file", "kioslaverc", "--group", "https", "--key", "Proxy", &proxy_url]).output();
+            let _ = Command::new("kwriteconfig5").args(["--file", "kioslaverc", "--group", "ftp", "--key", "Proxy", &proxy_url]).output();
+            
+            // Reload KDE proxy settings if KDE session is running
+            let _ = Command::new("dbus-send").args([
+                "--type=signal", 
+                "--session",
+                "--dest=org.kde.KWin",
+                "/KWin",
+                "org.kde.KWin.reloadConfig"
+            ]).output();
+        }
+        
+        // Set XDG environment variables for broader compatibility
+        std::env::set_var("ALL_PROXY", &proxy_url);
+        std::env::set_var("all_proxy", &proxy_url);
+        
         Ok(())
     }
 
     pub fn unset_proxy() -> Result<()> {
-        let _ = Command::new("gsettings").args(["set", "org.gnome.system.proxy", "mode", "none"]).output();
+        // Unset environment variables
+        std::env::remove_var("http_proxy");
+        std::env::remove_var("https_proxy");
+        std::env::remove_var("HTTP_PROXY");
+        std::env::remove_var("HTTPS_PROXY");
+        
+        // Unset XDG environment variables
+        std::env::remove_var("ALL_PROXY");
+        std::env::remove_var("all_proxy");
+        
+        // Unset GNOME proxy settings if gsettings is available
+        if Command::new("gsettings").arg("--version").output().is_ok() {
+            let _ = Command::new("gsettings").args(["set", "org.gnome.system.proxy", "mode", "none"]).output();
+        }
+        
+        // Unset KDE proxy settings if kwriteconfig5 is available
+        if Command::new("kwriteconfig5").arg("--help").output().is_ok() {
+            let _ = Command::new("kwriteconfig5").args(["--file", "kioslaverc", "--group", "Proxy Settings", "--key", "ProxyType", "0"]).output();
+            
+            // Reload KDE proxy settings if KDE session is running
+            let _ = Command::new("dbus-send").args([
+                "--type=signal", 
+                "--session",
+                "--dest=org.kde.KWin",
+                "/KWin",
+                "org.kde.KWin.reloadConfig"
+            ]).output();
+        }
+        
         Ok(())
     }
 }

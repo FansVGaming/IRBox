@@ -142,6 +142,31 @@ fn build_outbound(server: &Server) -> Result<Value> {
                 }]
             });
         }
+        Protocol::Hysteria2 => {
+            return Err(anyhow::anyhow!(
+                "Hysteria2 protocol is not supported by Xray-core, use Sing-box instead",
+            ));
+        }
+        Protocol::Tuic => {
+            return Err(anyhow::anyhow!(
+                "TUIC protocol is not supported by Xray-core, use Sing-box instead",
+            ));
+        }
+        Protocol::Ssh => {
+            return Err(anyhow::anyhow!(
+                "SSH protocol is not supported by Xray-core, use Sing-box instead",
+            ));
+        }
+        Protocol::WireGuard => {
+            return Err(anyhow::anyhow!(
+                "WireGuard protocol is not supported by Xray-core, use Sing-box instead",
+            ));
+        }
+        Protocol::Tun => {
+            return Err(anyhow::anyhow!(
+                "TUN interface is not supported by Xray-core, use Sing-box instead",
+            ));
+        }
         _ => {
             return Err(anyhow::anyhow!(
                 "Protocol {:?} not supported by Xray-core",
@@ -155,6 +180,22 @@ fn build_outbound(server: &Server) -> Result<Value> {
 
     // Transport
     match server.transport {
+        Transport::Tcp => {
+            stream["network"] = json!("tcp");
+        }
+        Transport::Kcp => {
+            stream["network"] = json!("kcp");
+            let kcp = server.kcp.as_ref();
+            let mut kcp_settings = json!({
+                "header": {
+                    "type": kcp.map(|k| k.header_type.as_str()).unwrap_or("none")
+                }
+            });
+            if let Some(seed) = kcp.and_then(|k| k.seed.as_deref()) {
+                kcp_settings["seed"] = json!(seed);
+            }
+            stream["kcpSettings"] = kcp_settings;
+        }
         Transport::Ws => {
             stream["network"] = json!("ws");
             let ws = server.ws.as_ref();
@@ -176,10 +217,41 @@ fn build_outbound(server: &Server) -> Result<Value> {
         Transport::Http => {
             stream["network"] = json!("h2");
         }
-        Transport::Tcp => {
-            stream["network"] = json!("tcp");
+        Transport::Quic => {
+            stream["network"] = json!("quic");
+            let quic = server.quic.as_ref();
+            let mut quic_settings = json!({
+                "header": {
+                    "type": quic.map(|q| q.header_type.as_str()).unwrap_or("none")
+                },
+                "security": quic.map(|q| q.quic_security.as_str()).unwrap_or("none"),
+                "key": quic.map(|q| q.key.as_str()).unwrap_or("")
+            });
+            stream["quicSettings"] = quic_settings;
         }
-        _ => {}
+        Transport::XHttp => {
+            stream["network"] = json!("xhttp");
+            let xhttp = server.xhttp.as_ref();
+            let mut xhttp_settings = json!({
+                "path": xhttp.map(|x| x.path.as_str()).unwrap_or("/"),
+                "mode": xhttp.map(|x| x.mode.as_str()).unwrap_or("auto")
+            });
+            if let Some(host) = xhttp.and_then(|x| x.host.as_deref()) {
+                xhttp_settings["host"] = json!(host);
+            }
+            stream["xHttpSettings"] = xhttp_settings;
+        }
+        Transport::HttpUpgrade => {
+            stream["network"] = json!("httpupgrade");
+            let httpupgrade = server.httpupgrade.as_ref();
+            let mut httpupgrade_settings = json!({
+                "path": httpupgrade.map(|h| h.path.as_str()).unwrap_or("/")
+            });
+            if let Some(host) = httpupgrade.and_then(|h| h.host.as_deref()) {
+                httpupgrade_settings["host"] = json!(host);
+            }
+            stream["httpUpgradeSettings"] = httpupgrade_settings;
+        }
     }
 
     // TLS
@@ -195,6 +267,13 @@ fn build_outbound(server: &Server) -> Result<Value> {
             if let Some(sni) = &server.tls.server_name {
                 rs["serverName"] = json!(sni);
             }
+            // Add additional TLS fields for reality settings
+            if server.tls.insecure {
+                rs["allowInsecure"] = json!(true);
+            }
+            if !server.tls.alpn.is_empty() {
+                rs["alpn"] = json!(server.tls.alpn);
+            }
             stream["realitySettings"] = rs;
         } else {
             stream["security"] = json!("tls");
@@ -205,11 +284,24 @@ fn build_outbound(server: &Server) -> Result<Value> {
             if server.tls.insecure {
                 tls["allowInsecure"] = json!(true);
             }
+            if server.tls.disable_sni {
+                tls["disableSNI"] = json!(true);  // XRay specific field
+            }
             if !server.tls.alpn.is_empty() {
                 tls["alpn"] = json!(server.tls.alpn);
             }
             if let Some(fp) = &server.tls.fingerprint {
                 tls["fingerprint"] = json!(fp);
+            }
+            // Add additional TLS fields for XRay
+            if let Some(min_ver) = &server.tls.min_version {
+                tls["minVersion"] = json!(min_ver);
+            }
+            if let Some(max_ver) = &server.tls.max_version {
+                tls["maxVersion"] = json!(max_ver);
+            }
+            if !server.tls.cipher_suites.is_empty() {
+                tls["cipherSuites"] = json!(server.tls.cipher_suites);
             }
             stream["tlsSettings"] = tls;
         }
