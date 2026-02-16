@@ -128,6 +128,7 @@ hysteria2://password@server:port/?upmbps=100&downmbps=200&obfs=salamander&sni=ex
 | Hysteria2 | ✅ | ❌ | Sing-box only |
 | TUIC | ✅ | ❌ | Sing-box only |
 | SSH | ✅ | ❌ | Sing-box only with full parameter support |
+| WireGuard | ✅ | ❌ | Sing-box only |
 
 ### SSH Configuration Parameters
 
@@ -141,6 +142,22 @@ hysteria2://password@server:port/?upmbps=100&downmbps=200&obfs=salamander&sni=ex
 | `host_key` | String | Expected server host key | `host_key=AAAAB3NzaC1yc2E...` |
 | `host_key_algorithms` | String | Comma-separated list of allowed algorithms | `host_key_algorithms=rsa-sha2-256,rsa-sha2-512` |
 | `client_version` | String | Custom SSH client version string | `client_version=SSH-2.0-MyClient` |
+
+### SSH Examples
+
+```bash
+# Basic SSH connection
+ssh://myuser:mypass@example.com:22#SSH-Server
+
+# SSH with private key
+ssh://myuser@example.com:22/?private_key_path=/home/user/.ssh/id_rsa#SSH-Key-Auth
+
+# SSH with multiple host key algorithms
+ssh://admin@example.com:2222/?private_key_path=/path/to/key&host_key_algorithms=rsa-sha2-256,rsa-sha2-512&client_version=SSH-2.0-Custom#Secure-SSH
+
+# SSH with passphrase protected key
+ssh://user@example.com:22/?private_key_path=/secure/key&private_key_passphrase=secret123#Protected-Key-SSH
+```
 
 ### WireGuard Configuration Parameters
 
@@ -199,23 +216,6 @@ hy2://password@server.com:443/?upmbps=100&downmbps=200&sni=example.com#HY2-Speed
 # Hysteria2 with obfuscation
 hy2://password@server.com:443/?upmbps=50&downmbps=100&obfs=salamander&obfs-password=obfspass#HY2-Obfuscated
 ```
-
-### SSH Examples
-
-```bash
-# Basic SSH connection
-ssh://myuser:mypass@example.com:22#SSH-Server
-
-# SSH with private key
-ssh://myuser@example.com:22/?private_key_path=/home/user/.ssh/id_rsa#SSH-Key-Auth
-
-# SSH with multiple host key algorithms
-ssh://admin@example.com:2222/?private_key_path=/path/to/key&host_key_algorithms=rsa-sha2-256,rsa-sha2-512&client_version=SSH-2.0-Custom#Secure-SSH
-
-# SSH with passphrase protected key
-ssh://user@example.com:22/?private_key_path=/secure/key&private_key_passphrase=secret123#Protected-Key-SSH
-```
-| WireGuard | ✅ | ❌ | Sing-box only |
 
 ### Transport Types
 

@@ -26,6 +26,7 @@ Designed for privacy-conscious users, IRBox offers multi-protocol support, advan
 - **Hysteria2**
 - **TUIC**
 - **SSH**
+- **WireGuard**
 
 ### Advanced Management
 - **Subscription Support** - Import and auto-update subscription URLs
