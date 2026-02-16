@@ -1,8 +1,22 @@
-# IRBox Client
+<div align="center">
 
-IRBox is a versatile and secure proxy client built with modern technologies to provide seamless and reliable internet connectivity. Designed for privacy-conscious users, IRBox offers multi-protocol support, advanced routing capabilities, and intuitive management tools to ensure a smooth and secure browsing experience.
+# 🌐 IRBox Client
 
-## 🚀 Features
+![IRBox Screenshot](screenshot.png)
+
+**A versatile and secure proxy client built with modern technologies to provide seamless and reliable internet connectivity**
+
+Designed for privacy-conscious users, IRBox offers multi-protocol support, advanced routing capabilities, and intuitive management tools to ensure a smooth and secure browsing experience.
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE) 
+[![Releases](https://img.shields.io/github/downloads/frank-vpl/IRBox/total.svg)](https://github.com/frank-vpl/IRBox/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/frank-vpl/IRBox)](https://github.com/frank-vpl/IRBox/releases/latest)
+
+[Farsi Version](README_FA.md)
+
+</div>
+
+## 🚀 Key Features
 
 ### Multi-Protocol Support
 - **VLESS**
@@ -88,6 +102,19 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 This project is licensed under the GNU General Public License v3.0 (GPL-3.0) - see the [LICENSE](LICENSE) file for details.
 
+### Core Technologies
+
+IRBox leverages the power of two leading proxy technologies:
+
+<div align="center">
+
+| Core | Description |
+|------|-------------|
+| [Xray-core](https://github.com/XTLS/Xray-core) | A platform for building proxies to bypass network restrictions |
+| [sing-box](https://github.com/SagerNet/sing-box) | The universal proxy platform |
+
+</div>
+
 ### Licenses of Third-Party Libraries
 
 - [Rust](https://www.rust-lang.org/) - [License](./licenses/rust.md)
@@ -101,16 +128,36 @@ This project is licensed under the GNU General Public License v3.0 (GPL-3.0) - s
 - Powered by [sing-box](https://github.com/SagerNet/sing-box) and [Xray-core](https://github.com/XTLS/Xray-core)
 - Inspired by the need for secure and flexible VPN solutions
 
-## Notes
+## 📚 Documentation
 [IRBox Documentation](./docs/README.md)
 
+## 🎨 Design Assets
+
+<div align="center">
+
 ### App Logo & Icons
+![PiraIcons](https://img.shields.io/badge/Icons_by-Hossein_Pira-3d85c6?style=for-the-badge&logo=github)
 
 - Icons by Hossein Pira – [PiraIcons](https://github.com/code3-dev/piraicons-assets) - [License](./licenses/piraicons.md)
 
-### NPM Packages Used
+</div>
 
-#### Dependencies
+## 🧩 Technologies Used
+
+<div align="center">
+
+### Frontend Dependencies
+![React](https://img.shields.io/badge/React-20232a?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
+
+### Framework & Core
+![Tauri](https://img.shields.io/badge/Tauri-FFD62E?style=for-the-badge&logo=tauri&logoColor=black)
+![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)
+
+</div>
+
+### Dependencies
 - [react](https://react.dev/) - A JavaScript library for building user interfaces
 - [react-dom](https://reactjs.org/docs/react-dom.html) - Provides DOM-specific methods that can be used at the top level of your app
 - [@tauri-apps/api](https://github.com/tauri-apps/tauri) - Tauri API bindings
