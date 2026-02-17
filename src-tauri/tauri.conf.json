@@ -44,8 +44,8 @@
       "pcores/xray"
     ],
     "resources": {
-      "pcores/geoip.dat": "pcores/geoip.dat",
-      "pcores/geosite.dat": "pcores/geosite.dat"
+      "pcores/geoip.dat": "geoip.dat",
+      "pcores/geosite.dat": "geosite.dat"
     },
     "license": "GPL-3.0",
     "licenseFile": "../LICENSE",
