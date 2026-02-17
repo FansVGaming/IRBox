@@ -3,13 +3,13 @@ name: Build
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to create release for (e.g., v1.0.0)'
+        description: "Tag to create release for (e.g., v1.0.0)"
         required: true
-        default: 'v1.0.0'
+        default: "v1.0.0"
 
 jobs:
   build:
@@ -21,23 +21,23 @@ jobs:
           # Windows x86_64 target
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-          
+
           # Windows ARM64 target
           - os: windows-latest
             target: aarch64-pc-windows-msvc
-          
+
           # Linux x86_64 target
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-          
+
           # Linux ARM64 target
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-          
+
           # macOS x86_64 target
           - os: macos-latest
             target: x86_64-apple-darwin
-          
+
           # macOS ARM64 target
           - os: macos-latest
             target: aarch64-apple-darwin
@@ -50,7 +50,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -174,7 +174,7 @@ jobs:
       - name: Display structure of downloaded artifacts
         run: |
           ls -R artifacts/
-      
+
       - name: Get tag name
         id: get_tag
         run: |
@@ -195,62 +195,70 @@ jobs:
           files: |
             artifacts/*-x86_64-pc-windows-msvc-artifacts/**/*IRBox*.exe
             artifacts/*-aarch64-pc-windows-msvc-artifacts/**/*IRBox*.exe
+            artifacts/*-x86_64-pc-windows-msvc-artifacts/**/*IRBox*.msi
+            artifacts/*-aarch64-pc-windows-msvc-artifacts/**/*IRBox*.msi
             artifacts/*-x86_64-apple-darwin-artifacts/**/*IRBox*.dmg
             artifacts/*-aarch64-apple-darwin-artifacts/**/*IRBox*.dmg
+            artifacts/*-x86_64-apple-darwin-artifacts/**/*IRBox*.app
+            artifacts/*-aarch64-apple-darwin-artifacts/**/*IRBox*.app
+            artifacts/*-x86_64-unknown-linux-gnu-artifacts/**/*IRBox*.deb
+            artifacts/*-aarch64-unknown-linux-gnu-artifacts/**/*IRBox*.deb
+            artifacts/*-x86_64-unknown-linux-gnu-artifacts/**/*IRBox*.rpm
+            artifacts/*-aarch64-unknown-linux-gnu-artifacts/**/*IRBox*.rpm
             artifacts/*-x86_64-unknown-linux-gnu-artifacts/**/*IRBox*.AppImage
             artifacts/*-aarch64-unknown-linux-gnu-artifacts/**/*IRBox*.AppImage
           body: |
             ## IRBox Release ${{ env.TAG_NAME }}
-            
+
             Automated release of IRBox client application.
-            
+
             ### What's Changed
             - Built for multiple platforms: Windows, macOS, and Linux
             - Includes sing-box and xray-core executables
             - Tauri-based desktop application
             - Added geoip.dat and geosite.dat for enhanced routing
-            
+
             ### Assets
             This release includes installers/packages for:
             - Windows (x86_64 MSVC/GNU and ARM64 MSVC)
             - macOS (Intel and Apple Silicon)
             - Linux (x86_64 and ARM64)
-            
+
             ### System Requirements
             - Windows 10 or later
             - macOS 10.15 or later
             - Linux with glibc 2.17 or later
-            
+
             ## Installing & Running IRBox on macOS
-            
+
             ### 1. Install IRBox
             1. Double-click the downloaded `.dmg` file.
             2. Move **IRBox** into the **Applications** folder.
             3. Open it from Applications like any standard Mac app.
-            
+
             > ℹ️ IRBox starts in **Proxy Mode** by default — no additional permissions are required.
-            
+
             ---
-            
+
             ## Enabling TUN Mode (Routes All Traffic)
-            
+
             When switching to **TUN Mode**, IRBox needs elevated system privileges to manage network traffic.
-            
+
             You can enable it in one of the following ways:
-            
+
             ### Method 1 — Grant Admin Access from Inside the App
             1. Launch **IRBox**
             2. Navigate to **Settings → VPN Mode**
             3. Choose **TUN**
             4. Click **Run as Administrator**
-            
+
             ### Method 2 — Start via Terminal
             Use the command below:
-            
+
             ```bash
             sudo /Applications/IRBox.app/Contents/MacOS/IRBox
             ```
-            
+
             ### Installation
             Download the appropriate package for your platform and follow the installation instructions.
         env:
