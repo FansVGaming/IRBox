@@ -17,22 +17,34 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
+          # Windows x86_64 target
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+          
+          # Windows ARM64 target
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+          
+          # Linux x86_64 target
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          
+          # Linux ARM64 target
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          
+          # macOS x86_64 target
           - os: macos-latest
             target: x86_64-apple-darwin
+          
+          # macOS ARM64 target
+          - os: macos-latest
+            target: aarch64-apple-darwin
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Clone IRBox repository
-        run: |
-          git clone https://github.com/frank-vpl/IRBox.git
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -58,16 +70,13 @@ jobs:
         run: brew install webkit2png
 
       - name: Install frontend dependencies
-        working-directory: IRBox
         run: npm install
 
       - name: Install Tauri CLI
-        working-directory: IRBox
         run: cargo install tauri-cli --version "^2"
 
       - name: Download core executables (Linux/macOS)
         if: matrix.os != 'windows-latest'
-        working-directory: IRBox
         run: |
           chmod +x cores.sh
           echo "Running cores.sh for target: ${{ matrix.target }}"
@@ -77,7 +86,6 @@ jobs:
 
       - name: Download core executables (Windows)
         if: matrix.os == 'windows-latest'
-        working-directory: IRBox
         run: |
           echo "Running cores.bat for target: ${{ matrix.target }}"
           ./cores.bat ${{ matrix.target }}
@@ -91,7 +99,6 @@ jobs:
 
       - name: Verify pcores before build (Linux/macOS)
         if: matrix.os != 'windows-latest'
-        working-directory: IRBox
         run: |
           echo "Checking pcores directory before build:"
           if [ -d "src-tauri/pcores" ]; then
@@ -117,7 +124,6 @@ jobs:
 
       - name: Verify pcores before build (Windows)
         if: matrix.os == 'windows-latest'
-        working-directory: IRBox
         run: |
           echo "Checking pcores directory before build:"
           if (Test-Path "src-tauri\pcores") {
@@ -143,15 +149,14 @@ jobs:
         shell: pwsh
 
       - name: Build Tauri app
-        working-directory: IRBox
         run: cargo tauri build --target ${{ matrix.target }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-artifacts
+          name: ${{ matrix.os }}-${{ matrix.target }}-artifacts
           path: |
-            IRBox/src-tauri/target/${{ matrix.target }}/release/bundle/**
+            src-tauri/target/${{ matrix.target }}/release/bundle/**
           retention-days: 30
 
   release:
@@ -188,12 +193,12 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            artifacts/*-artifacts/**/*IRBox*.dmg
-            artifacts/*-artifacts/**/*IRBox*.exe
-            artifacts/*-artifacts/**/*IRBox*.msi
-            artifacts/*-artifacts/**/*IRBox*.AppImage
-            artifacts/*-artifacts/**/*IRBox*.deb
-            artifacts/*-artifacts/**/*IRBox*.rpm
+            artifacts/*-x86_64-pc-windows-msvc-artifacts/**/*IRBox*.exe
+            artifacts/*-aarch64-pc-windows-msvc-artifacts/**/*IRBox*.exe
+            artifacts/*-x86_64-apple-darwin-artifacts/**/*IRBox*.dmg
+            artifacts/*-aarch64-apple-darwin-artifacts/**/*IRBox*.dmg
+            artifacts/*-x86_64-unknown-linux-gnu-artifacts/**/*IRBox*.AppImage
+            artifacts/*-aarch64-unknown-linux-gnu-artifacts/**/*IRBox*.AppImage
           body: |
             ## IRBox Release ${{ env.TAG_NAME }}
             
@@ -203,10 +208,11 @@ jobs:
             - Built for multiple platforms: Windows, macOS, and Linux
             - Includes sing-box and xray-core executables
             - Tauri-based desktop application
+            - Added geoip.dat and geosite.dat for enhanced routing
             
             ### Assets
             This release includes installers/packages for:
-            - Windows (x86_64)
+            - Windows (x86_64 MSVC/GNU and ARM64 MSVC)
             - macOS (Intel and Apple Silicon)
             - Linux (x86_64 and ARM64)
             

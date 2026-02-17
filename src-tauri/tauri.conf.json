@@ -41,10 +41,12 @@
     ],
     "externalBin": [
       "pcores/sing-box",
-      "pcores/xray",
-      "pcores/geoip.dat",
-      "pcores/geosite.dat"
+      "pcores/xray"
     ],
+    "resources": {
+      "pcores/geoip.dat": "pcores/geoip.dat",
+      "pcores/geosite.dat": "pcores/geosite.dat"
+    },
     "license": "GPL-3.0",
     "licenseFile": "../LICENSE",
     "publisher": "IranGuard",
