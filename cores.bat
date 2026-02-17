@@ -194,6 +194,20 @@ copy "!XRAY_BIN!" "%BINDIR%\xray-%TARGET%%EXE%"
 echo   ✓ %BINDIR%\xray-%TARGET%%EXE%
 echo.
 
+REM ── Download Xray GeoIP and Geosite databases ──────────────────────────────────────
+
+echo === Xray GeoIP and Geosite databases ===
+
+set "GEOIP_URL=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat"
+set "GEOSITE_URL=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
+
+call :download "!GEOIP_URL!" "%BINDIR%\geoip.dat"
+call :download "!GEOSITE_URL!" "%BINDIR%\geosite.dat"
+
+echo   ✓ %BINDIR%\geoip.dat
+echo   ✓ %BINDIR%\geosite.dat
+echo.
+
 REM ── wintun.dll for TUN mode ──────────────────────────────
 
 if "%EXE%"==".exe" (

@@ -25,7 +25,7 @@ export function ServerList() {
       !search ||
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.address.toLowerCase().includes(search.toLowerCase()) ||
-      s.protocol.toLowerCase().includes(search.toLowerCase());
+      (s.protocol === 'custom' ? 'Custom' : s.protocol).toLowerCase().includes(search.toLowerCase());
     const matchTab =
       tab === "all" || s.subscription_id === tab || (!s.subscription_id && tab === "manual");
     return matchSearch && matchTab;
@@ -37,7 +37,7 @@ export function ServerList() {
       const bp = b.latency_ms ?? 99999;
       return ap - bp;
     }
-    if (sortBy === "protocol") return a.protocol.localeCompare(b.protocol);
+    if (sortBy === "protocol") return (a.protocol === 'custom' ? 'Custom' : a.protocol).localeCompare(b.protocol === 'custom' ? 'Custom' : b.protocol);
     return a.name.localeCompare(b.name);
   });
 

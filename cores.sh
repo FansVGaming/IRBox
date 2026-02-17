@@ -144,6 +144,20 @@ chmod +x "$BINDIR/xray-${TARGET}${EXE}"
 echo "  ✓ $BINDIR/xray-${TARGET}${EXE}"
 echo ""
 
+# ── Download Xray GeoIP and Geosite databases ──────────────────────────────────────
+
+echo "=== Xray GeoIP and Geosite databases ==="
+
+GEOIP_URL="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat"
+GEOSITE_URL="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
+
+download "$GEOIP_URL" "$BINDIR/geoip.dat"
+download "$GEOSITE_URL" "$BINDIR/geosite.dat"
+
+echo "  ✓ $BINDIR/geoip.dat"
+echo "  ✓ $BINDIR/geosite.dat"
+echo ""
+
 # ── wintun.dll for TUN mode ──────────────────────────────
 
 if [ "${EXE}" = ".exe" ]; then

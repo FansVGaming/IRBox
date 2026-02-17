@@ -12,6 +12,8 @@ use crate::proxy::models::*;
 
 use super::{singbox, xray};
 
+use serde_json::json;
+
 pub struct CoreManager {
     process: Arc<Mutex<Option<Child>>>,
     config_dir: PathBuf,
@@ -125,17 +127,222 @@ impl CoreManager {
             return Err(anyhow!("TUN mode requires sing-box. Switch core to sing-box in settings."));
         }
 
-        let config = match core_type {
-            CoreType::SingBox => singbox::generate_config(server, socks_port, http_port, tun_mode, routing_rules, default_route)?,
-            CoreType::Xray => xray::generate_config(server, socks_port, http_port, routing_rules, default_route)?,
-        };
-
         let config_path = self.config_dir.join("running_config.json");
         if let Some(parent) = config_path.parent() {
             std::fs::create_dir_all(parent).ok();
         }
-        std::fs::write(&config_path, serde_json::to_string_pretty(&config)?)
-            .map_err(|e| anyhow!("Cannot write config to {}: {}", config_path.display(), e))?;
+        
+        // For Custom protocol, merge the JSON config with necessary wrapper configuration
+        if server.protocol == Protocol::Custom {
+            if let Some(ref json_config) = server.json_config {
+                // Parse the custom JSON config
+                let mut custom_config: serde_json::Value = serde_json::from_str(json_config)
+                    .map_err(|e| anyhow!("Invalid JSON config: {}", e))?;
+                
+                // Generate the necessary inbounds based on the core type
+                let inbounds = match core_type {
+                    CoreType::SingBox => {
+                        let mut inbounds = vec![
+                            json!({
+                                "type": "socks",
+                                "tag": "socks-in",
+                                "listen": "127.0.0.1",
+                                "listen_port": socks_port
+                            }),
+                            json!({
+                                "type": "http",
+                                "tag": "http-in",
+                                "listen": "127.0.0.1",
+                                "listen_port": http_port
+                            }),
+                        ];
+                        
+                        // Add TUN interface if in TUN mode
+                        if tun_mode {
+                            inbounds.push(json!({
+                                "type": "tun",
+                                "tag": "tun-in",
+                                "address": [
+                                    "172.19.0.1/30",
+                                    "fdfe:dcba:9876::1/126"
+                                ],
+                                "auto_route": true,
+                                "strict_route": false,
+                                "stack": "mixed",
+                                "endpoint_independent_nat": true,
+                                "mtu": 9000,
+                                "gso": true,
+                                "gso_max_size": 65536
+                            }));
+                        }
+                        inbounds
+                    },
+                    CoreType::Xray => {
+                        let mut inbounds = vec![
+                            json!({
+                                "tag": "socks-in",
+                                "port": socks_port,
+                                "listen": "127.0.0.1",
+                                "protocol": "socks",
+                                "settings": {
+                                    "udp": true
+                                },
+                                "sniffing": {
+                                    "enabled": true,
+                                    "destOverride": ["http", "tls"]
+                                }
+                            }),
+                            json!({
+                                "tag": "http-in",
+                                "port": http_port,
+                                "listen": "127.0.0.1",
+                                "protocol": "http",
+                                "sniffing": {
+                                    "enabled": true,
+                                    "destOverride": ["http", "tls"]
+                                }
+                            })
+                        ];
+                        
+                        // Note: Xray doesn't have native TUN support, so we don't add TUN interface
+                        inbounds
+                    }
+                };
+                
+                // Add inbounds to the custom config
+                if let serde_json::Value::Object(ref mut obj) = custom_config {
+                    obj.insert("inbounds".to_string(), json!(inbounds));
+                    
+                    // For sing-box, ensure proper DNS configuration for TUN mode
+                    if core_type == CoreType::SingBox {
+                        // Create the appropriate DNS configuration based on TUN mode
+                        let dns = if tun_mode {
+                            json!({
+                                "servers": [
+                                    {
+                                        "tag": "dns-remote",
+                                        "type": "https",
+                                        "server": "dns.google",
+                                        "server_port": 443,
+                                        "domain_resolver": "dns-direct",
+                                        "detour": "proxy"
+                                    },
+                                    {
+                                        "tag": "dns-direct",
+                                        "type": "udp",
+                                        "server": "8.8.8.8",
+                                        "server_port": 53
+                                    }
+                                ],
+                                "rules": [
+                                    { "query_type": [28, 32, 33], "action": "reject" },
+                                    { "domain_suffix": [".lan"], "action": "reject" }
+                                ],
+                                "final": "dns-remote",
+                                "independent_cache": true,
+                                "disable_cache": false,
+                                "disable_expire": false
+                            })
+                        } else {
+                            json!({
+                                "servers": [
+                                    {
+                                        "tag": "dns-local",
+                                        "type": "local"
+                                    },
+                                    {
+                                        "tag": "dns-remote",
+                                        "type": "udp",
+                                        "server": "8.8.8.8"
+                                    }
+                                ],
+                                "final": "dns-remote",
+                                "disable_cache": false,
+                                "disable_expire": false
+                            })
+                        };
+                        
+                        // Always set the DNS config for sing-box, regardless of what's in the custom config
+                        obj.insert("dns".to_string(), dns);
+                        
+                        // Create routing rules based on TUN mode
+                        let mut route_rules = vec![
+                            json!({ "action": "sniff" }),
+                            json!({ "protocol": "dns", "action": "hijack-dns" }),
+                        ];
+                        
+                        if tun_mode {
+                            // Add TUN-specific routing rules
+                            route_rules.append(&mut vec![
+                                // Block multicast, NetBIOS, mDNS
+                                json!({
+                                    "network": "udp",
+                                    "port": [135, 137, 138, 139, 5353],
+                                    "action": "reject"
+                                }),
+                                json!({
+                                    "ip_cidr": ["224.0.0.0/3", "ff00::/8"],
+                                    "action": "reject"
+                                }),
+                                json!({
+                                    "source_ip_cidr": ["224.0.0.0/3", "ff00::/8"],
+                                    "action": "reject"
+                                })
+                            ]);
+                        }
+                        
+                        // Add user-defined routing rules
+                        for rule in routing_rules.iter().filter(|r| r.enabled) {
+                            let domain = &rule.domain;
+                            let rule_action = match rule.action {
+                                RuleAction::Direct => json!({ "domain_suffix": [domain], "outbound": "direct" }),
+                                RuleAction::Block => json!({ "domain_suffix": [domain], "action": "reject" }),
+                                RuleAction::Proxy => json!({ "domain_suffix": [domain], "outbound": "proxy" }),
+                            };
+                            route_rules.push(rule_action);
+                        }
+                        
+                        let final_route = if default_route == "direct" { "direct" } else { "proxy" };
+                        
+                        let route_config = json!({
+                            "rules": route_rules,
+                            "final": final_route,
+                            "auto_detect_interface": !cfg!(target_os = "android"),
+                            "default_domain_resolver": {
+                                "server": if cfg!(target_os = "android") { "dns-remote" } else if tun_mode { "dns-direct" } else { "dns-local" }
+                            }
+                        });
+                        
+                        // Always set the route config for sing-box, regardless of what's in the custom config
+                        obj.insert("route".to_string(), route_config);
+                    } else if core_type == CoreType::Xray {
+                        // For Xray, if no DNS is set, add basic DNS config
+                        if !obj.contains_key("dns") {
+                            let dns = json!({
+                                "servers": [
+                                    "https+local://1.1.1.1/dns-query",
+                                    "localhost"
+                                ]
+                            });
+                            obj.insert("dns".to_string(), dns);
+                        }
+                    }
+                }
+                
+                std::fs::write(&config_path, serde_json::to_string_pretty(&custom_config)?)
+                    .map_err(|e| anyhow!("Cannot write merged config to {}: {}", config_path.display(), e))?;
+            } else {
+                return Err(anyhow!("Custom protocol requires a JSON config"));
+            }
+        } else {
+            let config = match core_type {
+                CoreType::SingBox => singbox::generate_config(server, socks_port, http_port, tun_mode, routing_rules, default_route)?,
+                CoreType::Xray => xray::generate_config(server, socks_port, http_port, routing_rules, default_route)?,
+            };
+            
+            std::fs::write(&config_path, serde_json::to_string_pretty(&config)?)
+                .map_err(|e| anyhow!("Cannot write config to {}: {}", config_path.display(), e))?;
+        }
 
         log::info!(
             "Starting {:?}{} for '{}' ({}:{})",

@@ -26,6 +26,8 @@ pub fn parse_link(link: &str) -> Result<Server> {
         parse_ssh(link)
     } else if link.starts_with("wg://") || link.starts_with("wireguard://") {
         parse_wireguard(link)
+    } else if is_valid_json(link) {
+        parse_json_config(link)
     } else {
         Err(anyhow!("Unsupported link format: {}", &link[..20.min(link.len())]))
     }
@@ -51,13 +53,63 @@ pub fn parse_subscription_content(content: &str) -> Vec<Server> {
     match decoded {
         Ok(bytes) => {
             if let Ok(text) = String::from_utf8(bytes) {
-                parse_links(&text)
+                // Check if the decoded content is a JSON array of configs
+                if is_valid_json(&text) {
+                    parse_json_subscription_content(&text)
+                } else {
+                    parse_links(&text)
+                }
+            } else {
+                // If decoding failed, try parsing as-is
+                if is_valid_json(content) {
+                    parse_json_subscription_content(content)
+                } else {
+                    parse_links(content)
+                }
+            }
+        }
+        Err(_) => {
+            // If base64 decoding failed, try parsing as-is
+            if is_valid_json(content) {
+                parse_json_subscription_content(content)
             } else {
                 parse_links(content)
             }
         }
-        Err(_) => parse_links(content),
     }
+}
+
+/// Parse subscription content that is JSON (either single JSON or array of JSON configs)
+fn parse_json_subscription_content(content: &str) -> Vec<Server> {
+    let trimmed = content.trim();
+    
+    // Try to parse as a single JSON object first
+    if let Ok(json_value) = serde_json::from_str::<serde_json::Value>(trimmed) {
+        if json_value.is_object() {
+            // Single JSON config
+            if let Ok(server) = parse_json_config(trimmed) {
+                return vec![server];
+            }
+        } else if json_value.is_array() {
+            // Array of JSON configs
+            let mut servers = Vec::new();
+            if let Some(array) = json_value.as_array() {
+                for item in array {
+                    if item.is_object() {
+                        if let Ok(json_str) = serde_json::to_string(item) {
+                            if let Ok(server) = parse_json_config(&json_str) {
+                                servers.push(server);
+                            }
+                        }
+                    }
+                }
+            }
+            return servers;
+        }
+    }
+    
+    // If JSON parsing fails, return empty vector
+    Vec::new()
 }
 
 // ── VLESS ──────────────────────────────────────────────
@@ -209,6 +261,7 @@ fn parse_vless(link: &str) -> Result<Server> {
         tun_settings: None,
         subscription_id: None,
         latency_ms: None,
+        json_config: None,
     })
 }
 
@@ -345,6 +398,7 @@ fn parse_vmess(link: &str) -> Result<Server> {
         tun_settings: None,
         subscription_id: None,
         latency_ms: None,
+        json_config: None,
     })
 }
 
@@ -512,6 +566,7 @@ fn parse_shadowsocks(link: &str) -> Result<Server> {
                 tun_settings: None,
                 subscription_id: None,
                 latency_ms: None,
+                json_config: None,
             });
         }
     }
@@ -587,6 +642,7 @@ fn make_ss_server(name: String, address: String, port: u16, method: String, pass
         tun_settings: None,
         subscription_id: None,
         latency_ms: None,
+        json_config: None,
     }
 }
 
@@ -702,6 +758,7 @@ fn parse_trojan(link: &str) -> Result<Server> {
         tun_settings: None,
         subscription_id: None,
         latency_ms: None,
+        json_config: None,
     })
 }
 
@@ -785,6 +842,7 @@ fn parse_hysteria2(link: &str) -> Result<Server> {
         tun_settings: None,
         subscription_id: None,
         latency_ms: None,
+        json_config: None,
     })
 }
 
@@ -884,6 +942,7 @@ fn parse_tuic(link: &str) -> Result<Server> {
         tun_settings: None,
         subscription_id: None,
         latency_ms: None,
+        json_config: None,
     })
 }
 
@@ -958,6 +1017,7 @@ fn parse_ssh(link: &str) -> Result<Server> {
         tun_settings: None,
         subscription_id: None,
         latency_ms: None,
+        json_config: None,
     })
 }
 
@@ -975,10 +1035,14 @@ fn parse_wireguard(link: &str) -> Result<Server> {
     let params = QueryParams::from_url(&url);
     
     // Parse WireGuard parameters
-    let address = params.get("address").map(|addr| vec![addr.clone()]).unwrap_or_default();
+    let address = params.get("address").map(|addr| {
+        addr.split(',').map(|s| s.trim().to_string()).collect()
+    }).unwrap_or_default();
     let public_key = params.get("public_key").unwrap_or_default();
     let pre_shared_key = params.get("pre_shared_key");
-    let allowed_ips = params.get("allowed_ips").map(|ips| vec![ips.clone()]).unwrap_or_else(|| vec!["0.0.0.0/0".to_string()]);
+    let allowed_ips = params.get("allowed_ips").map(|ips| {
+        ips.split(',').map(|s| s.trim().to_string()).collect()
+    }).unwrap_or_else(|| vec!["0.0.0.0/0".to_string()]);
     let persistent_keepalive_interval = params.get("persistent_keepalive_interval").and_then(|s| s.parse::<u32>().ok());
     let mtu = params.get("mtu").and_then(|s| s.parse::<u32>().ok());
     let system = params.get("system").as_deref() == Some("true");
@@ -1046,6 +1110,7 @@ fn parse_wireguard(link: &str) -> Result<Server> {
         tun_settings: None,
         subscription_id: None,
         latency_ms: None,
+        json_config: None,
     })
 }
 
@@ -1117,4 +1182,62 @@ mod tests {
         assert_eq!(server.protocol, Protocol::Trojan);
         assert_eq!(server.password, Some("password123".to_string()));
     }
+}
+
+/// Check if a string is valid JSON
+fn is_valid_json(s: &str) -> bool {
+    serde_json::from_str::<serde_json::Value>(s.trim()).is_ok()
+}
+
+/// Parse a JSON config as a Custom server
+fn parse_json_config(json_str: &str) -> Result<Server> {
+    // Validate that it's valid JSON
+    let json_value: serde_json::Value = serde_json::from_str(json_str.trim())
+        .map_err(|e| anyhow!("Invalid JSON: {}", e))?;
+    
+    // For JSON configs, we'll use the JSON content itself as the "address"
+    // and assign a default name
+    let name = extract_name_from_json(&json_value).unwrap_or_else(|| "Custom Config".to_string());
+    
+    Ok(Server {
+        id: Uuid::new_v4().to_string(),
+        name,
+        address: "custom-json".to_string(), // Placeholder address
+        port: 0, // Placeholder port
+        protocol: Protocol::Custom,
+        uuid: None,
+        password: None,
+        method: Some("json".to_string()), // Indicate this is a JSON config
+        flow: None,
+        alter_id: None,
+        transport: Transport::Tcp, // Default transport
+        ws: None,
+        grpc: None,
+        xhttp: None,
+        httpupgrade: None,
+        kcp: None,
+        quic: None,
+        tls: TlsSettings::default(),
+        ssh_settings: None,
+        wireguard_settings: None,
+        tun_settings: None,
+        subscription_id: None,
+        latency_ms: None,
+        json_config: Some(json_str.trim().to_string()), // Store the original JSON config
+    })
+}
+
+/// Try to extract a name from the JSON config if possible
+fn extract_name_from_json(json: &serde_json::Value) -> Option<String> {
+    // Try common fields that might contain a name
+    if let Some(name) = json.get("remarks").and_then(|v| v.as_str()) {
+        return Some(name.to_string());
+    }
+    if let Some(name) = json.get("name").and_then(|v| v.as_str()) {
+        return Some(name.to_string());
+    }
+    if let Some(name) = json.get("remark").and_then(|v| v.as_str()) {
+        return Some(name.to_string());
+    }
+    None
 }

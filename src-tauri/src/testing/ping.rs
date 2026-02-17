@@ -16,6 +16,12 @@ pub async fn tcp_ping(address: &str, port: u16, timeout_ms: u64) -> Result<u32> 
 
 /// Ping a server 3 times and return average
 pub async fn ping_average(address: &str, port: u16) -> Option<u32> {
+    // For custom JSON configs, we use placeholders, so we can't ping them directly
+    if address == "custom-json" && port == 0 {
+        // Return None for custom configs since we can't ping them directly
+        return None;
+    }
+
     let mut results = Vec::new();
 
     for _ in 0..3 {

@@ -6,6 +6,78 @@ use crate::proxy::models::*;
 /// Generate a sing-box config for connecting to a single server
 pub fn generate_config(server: &Server, socks_port: u16, http_port: u16, tun_mode: bool, routing_rules: &[RoutingRule], default_route: &str) -> Result<Value> {
     let outbound = build_outbound(server)?;
+    
+    // Handle WireGuard endpoints separately
+    let endpoints = if server.protocol == Protocol::WireGuard {
+        if let Some(ref wg_settings) = server.wireguard_settings {
+            let mut wg_endpoint = json!({
+                "type": "wireguard",
+                "tag": "wg-ep",
+            });
+            
+            // Add WireGuard specific settings
+            if let Some(system) = wg_settings.system {
+                wg_endpoint["system"] = json!(system);
+            }
+            if let Some(ref name) = wg_settings.name {
+                wg_endpoint["name"] = json!(name);
+            }
+            if let Some(mtu) = wg_settings.mtu {
+                wg_endpoint["mtu"] = json!(mtu);
+            }
+            if !wg_settings.address.is_empty() {
+                wg_endpoint["address"] = json!(wg_settings.address);
+            }
+            wg_endpoint["private_key"] = json!(wg_settings.private_key);
+            
+            if let Some(listen_port) = wg_settings.listen_port {
+                wg_endpoint["listen_port"] = json!(listen_port);
+            }
+            
+            // Peers settings - now including address and port as required by new format
+            let mut peers = Vec::new();
+            for peer in &wg_settings.peers {
+                let mut peer_obj = json!({
+                    "public_key": peer.public_key,
+                    "allowed_ips": peer.allowed_ips,
+                });
+                
+                // Add address and port to peer as required by new endpoint format
+                if !peer.address.is_empty() {
+                    peer_obj["address"] = json!(peer.address);
+                }
+                if let Some(port) = peer.port {
+                    peer_obj["port"] = json!(port);
+                }
+                
+                if let Some(ref psk) = peer.pre_shared_key {
+                    peer_obj["pre_shared_key"] = json!(psk);
+                }
+                if let Some(interval) = peer.persistent_keepalive_interval {
+                    peer_obj["persistent_keepalive_interval"] = json!(interval);
+                }
+                if let Some(ref reserved) = peer.reserved {
+                    peer_obj["reserved"] = json!(reserved);
+                }
+                peers.push(peer_obj);
+            }
+            wg_endpoint["peers"] = json!(peers);
+            
+            // Optional settings
+            if let Some(ref timeout) = wg_settings.udp_timeout {
+                wg_endpoint["udp_timeout"] = json!(timeout);
+            }
+            if let Some(workers) = wg_settings.workers {
+                wg_endpoint["workers"] = json!(workers);
+            }
+            
+            Some(vec![wg_endpoint])
+        } else {
+            None
+        }
+    } else {
+        None
+    };
 
     // On Android, TUN requires VpnService — force disable
     let tun_mode = if cfg!(target_os = "android") { false } else { tun_mode };
@@ -36,7 +108,8 @@ pub fn generate_config(server: &Server, socks_port: u16, http_port: u16, tun_mod
             "auto_route": true,
             "strict_route": false,
             "stack": "mixed",
-            "endpoint_independent_nat": true
+            "endpoint_independent_nat": true,
+            "mtu": 1420
         }));
     }
 
@@ -65,7 +138,9 @@ pub fn generate_config(server: &Server, socks_port: u16, http_port: u16, tun_mod
                 { "domain_suffix": [".lan"], "action": "reject" }
             ],
             "final": "dns-remote",
-            "independent_cache": true
+            "independent_cache": true,
+            "disable_cache": false,
+            "disable_expire": false
         })
     } else {
         json!({
@@ -80,10 +155,12 @@ pub fn generate_config(server: &Server, socks_port: u16, http_port: u16, tun_mod
                     "server": "8.8.8.8"
                 }
             ],
-            "final": "dns-remote"
+            "final": "dns-remote",
+            "disable_cache": false,
+            "disable_expire": false
         })
     };
-
+    
     // Route rules (sniff + DNS hijack, same approach as NekoRay)
     let mut route_rules: Vec<Value> = vec![
         json!({ "action": "sniff" }),
@@ -125,7 +202,7 @@ pub fn generate_config(server: &Server, socks_port: u16, http_port: u16, tun_mod
 
     let final_route = if default_route == "direct" { "direct" } else { "proxy" };
 
-    let config = json!({
+    let mut config = json!({
         "log": {
             "level": if cfg!(target_os = "android") { "info" } else { "warn" },
             "timestamp": true
@@ -153,11 +230,26 @@ pub fn generate_config(server: &Server, socks_port: u16, http_port: u16, tun_mod
             }
         }
     });
+    
+    // Add endpoints array if present (for WireGuard)
+    if let Some(endpts) = endpoints {
+        config["endpoints"] = json!(endpts);
+    }
 
     Ok(config)
 }
 
 fn build_outbound(server: &Server) -> Result<Value> {
+    // For WireGuard, we return a placeholder since it goes in endpoints, not outbounds
+    if server.protocol == Protocol::WireGuard {
+        return Ok(json!({
+            "type": "selector",
+            "tag": "proxy",
+            "outbounds": ["wg-ep"], // Reference to the WireGuard endpoint
+            "default": "wg-ep"
+        }));
+    }
+
     let mut out = json!({
         "tag": "proxy",
         "server": server.address,
@@ -325,67 +417,6 @@ fn build_outbound(server: &Server) -> Result<Value> {
                 }
             }
         }
-        Protocol::WireGuard => {
-            out["type"] = json!("wireguard");
-            out["tag"] = json!("proxy");
-            
-            // Add WireGuard specific settings from server parameters
-            if let Some(ref wg_settings) = server.wireguard_settings {
-                // Basic settings
-                if let Some(system) = wg_settings.system {
-                    out["system"] = json!(system);
-                }
-                if let Some(ref name) = wg_settings.name {
-                    out["name"] = json!(name);
-                }
-                if let Some(mtu) = wg_settings.mtu {
-                    out["mtu"] = json!(mtu);
-                }
-                if !wg_settings.address.is_empty() {
-                    out["address"] = json!(wg_settings.address);
-                }
-                out["private_key"] = json!(wg_settings.private_key);
-                
-                if let Some(listen_port) = wg_settings.listen_port {
-                    out["listen_port"] = json!(listen_port);
-                }
-                
-                // Peers settings
-                let mut peers = Vec::new();
-                for peer in &wg_settings.peers {
-                    let mut peer_obj = json!({
-                        "public_key": peer.public_key,
-                        "allowed_ips": peer.allowed_ips,
-                    });
-                    
-                    if !peer.address.is_empty() {
-                        peer_obj["address"] = json!(peer.address);
-                    }
-                    if let Some(port) = peer.port {
-                        peer_obj["port"] = json!(port);
-                    }
-                    if let Some(ref psk) = peer.pre_shared_key {
-                        peer_obj["pre_shared_key"] = json!(psk);
-                    }
-                    if let Some(interval) = peer.persistent_keepalive_interval {
-                        peer_obj["persistent_keepalive_interval"] = json!(interval);
-                    }
-                    if let Some(ref reserved) = peer.reserved {
-                        peer_obj["reserved"] = json!(reserved);
-                    }
-                    peers.push(peer_obj);
-                }
-                out["peers"] = json!(peers);
-                
-                // Optional settings
-                if let Some(ref timeout) = wg_settings.udp_timeout {
-                    out["udp_timeout"] = json!(timeout);
-                }
-                if let Some(workers) = wg_settings.workers {
-                    out["workers"] = json!(workers);
-                }
-            }
-        }
         Protocol::Tun => {
             out["type"] = json!("tun");
             out["tag"] = json!("proxy");
@@ -396,9 +427,20 @@ fn build_outbound(server: &Server) -> Result<Value> {
                 if let Some(ref interface_name) = tun_settings.interface_name {
                     out["interface_name"] = json!(interface_name);
                 }
+                
+                // Use new format address structure (combines inet4 and inet6 addresses)
                 if !tun_settings.address.is_empty() {
                     out["address"] = json!(tun_settings.address);
+                } else {
+                    // Fallback to deprecated fields if new format address is empty
+                    let mut combined_addresses = Vec::new();
+                    combined_addresses.extend_from_slice(&tun_settings.inet4_address);
+                    combined_addresses.extend_from_slice(&tun_settings.inet6_address);
+                    if !combined_addresses.is_empty() {
+                        out["address"] = json!(combined_addresses);
+                    }
                 }
+                
                 if let Some(mtu) = tun_settings.mtu {
                     out["mtu"] = json!(mtu);
                 }
@@ -438,12 +480,33 @@ fn build_outbound(server: &Server) -> Result<Value> {
                 if let Some(strict_route) = tun_settings.strict_route {
                     out["strict_route"] = json!(strict_route);
                 }
+                
+                // Use new format route_address (combines deprecated route fields)
                 if !tun_settings.route_address.is_empty() {
                     out["route_address"] = json!(tun_settings.route_address);
+                } else {
+                    // Fallback to deprecated route fields if new format is empty
+                    let mut combined_routes = Vec::new();
+                    combined_routes.extend_from_slice(&tun_settings.inet4_route_address);
+                    combined_routes.extend_from_slice(&tun_settings.inet6_route_address);
+                    if !combined_routes.is_empty() {
+                        out["route_address"] = json!(combined_routes);
+                    }
                 }
+                
+                // Use new format route_exclude_address (combines deprecated exclude fields)
                 if !tun_settings.route_exclude_address.is_empty() {
                     out["route_exclude_address"] = json!(tun_settings.route_exclude_address);
+                } else {
+                    // Fallback to deprecated exclude fields if new format is empty
+                    let mut combined_excludes = Vec::new();
+                    combined_excludes.extend_from_slice(&tun_settings.inet4_route_exclude_address);
+                    combined_excludes.extend_from_slice(&tun_settings.inet6_route_exclude_address);
+                    if !combined_excludes.is_empty() {
+                        out["route_exclude_address"] = json!(combined_excludes);
+                    }
                 }
+                
                 if !tun_settings.route_address_set.is_empty() {
                     out["route_address_set"] = json!(tun_settings.route_address_set);
                 }
@@ -456,9 +519,14 @@ fn build_outbound(server: &Server) -> Result<Value> {
                 if let Some(ref udp_timeout) = tun_settings.udp_timeout {
                     out["udp_timeout"] = json!(udp_timeout);
                 }
-                if let Some(ref stack) = tun_settings.stack {
-                    out["stack"] = json!(stack);
+                
+                // Set mixed stack for better performance and compatibility
+                if tun_settings.stack.is_none() {
+                    out["stack"] = json!("mixed");
+                } else {
+                    out["stack"] = json!(tun_settings.stack);
                 }
+                
                 if !tun_settings.include_interface.is_empty() {
                     out["include_interface"] = json!(tun_settings.include_interface);
                 }
@@ -513,8 +581,16 @@ fn build_outbound(server: &Server) -> Result<Value> {
                         out["platform"] = serde_json::Value::Object(platform_map);
                     }
                 }
+            } else {
+                // Default TUN settings for better performance
+                out["address"] = json!(["172.19.0.1/30", "fdfe:dcba:9876::1/126"]);
+                out["auto_route"] = json!(true);
+                out["strict_route"] = json!(false);
+                out["stack"] = json!("mixed");
+                out["endpoint_independent_nat"] = json!(true);
             }
         }
+        _ => {} // All other protocols handled above
     }
 
     // Transport

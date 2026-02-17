@@ -35,7 +35,7 @@ export function ServerCard({ server }: { server: ServerInfo }) {
       onClick={handleSelect}
     >
       <Flag code={country} size={22} />
-      <span className="server-proto">{server.protocol}</span>
+      <span className="server-proto">{server.protocol === 'custom' ? 'Custom' : server.protocol}</span>
       <span className="server-name">{server.name}</span>
       <span className={`server-ping ${pingClass(server.latency_ms)}`}>
         {server.latency_ms != null ? `${server.latency_ms}ms` : "\u2014"}

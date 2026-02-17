@@ -119,7 +119,7 @@ export function StatsPage() {
               return (
                 <div key={i} className="history-row">
                   <span className="history-server">
-                    <span className="history-proto">{r.protocol}</span>
+                    <span className="history-proto">{r.protocol === 'custom' ? 'Custom' : r.protocol}</span>
                     {r.server_name}
                   </span>
                   <span>{dur > 0 ? formatDuration(dur) : "--"}</span>

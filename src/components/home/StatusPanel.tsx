@@ -87,7 +87,7 @@ export function StatusPanel() {
         )}
         {!state.connected && selectedServer && (
           <div className="status-server selected">
-            {selectedServer.name} ({selectedServer.protocol})
+            {selectedServer.name} ({selectedServer.protocol === 'custom' ? 'Custom' : selectedServer.protocol})
           </div>
         )}
         {state.connected && (

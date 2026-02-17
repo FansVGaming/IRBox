@@ -166,7 +166,7 @@ ssh://user@example.com:22/?private_key_path=/secure/key&private_key_passphrase=s
 | `private_key` | String | Client's private key | `private_key=CLIENT_PRIVATE_KEY` |
 | `public_key` | String | Server's public key | `public_key=SERVER_PUBLIC_KEY` |
 | `allowed_ips` | String | IPs to route through tunnel | `allowed_ips=0.0.0.0/0` |
-| `address` | String | Tunnel IP address | `address=192.168.1.2` |
+| `address` | String | Local tunnel IP address(es) | `address=192.168.1.2` |
 | `pre_shared_key` | String | Pre-shared key for additional security | `pre_shared_key=PRESHARED_KEY` |
 | `persistent_keepalive_interval` | Integer | Keepalive interval in seconds | `persistent_keepalive_interval=25` |
 | `mtu` | Integer | Maximum transmission unit | `mtu=1420` |
@@ -176,6 +176,8 @@ ssh://user@example.com:22/?private_key_path=/secure/key&private_key_passphrase=s
 | `udp_timeout` | String | UDP idle timeout | `udp_timeout=300s` |
 | `workers` | Integer | Number of worker threads | `workers=4` |
 | `reserved` | String | Reserved bytes (comma-separated) | `reserved=0,0,0` |
+
+**Note**: In sing-box WireGuard configuration, peer objects do not include `address` or `port` fields. The server endpoint is configured using the URL host and port (`server.com:port` in the URL). The `address` parameter in the URL query string refers to the local tunnel IP address(es) assigned to the WireGuard interface.
 
 ### WireGuard Examples
 

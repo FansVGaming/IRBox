@@ -13,6 +13,7 @@ pub enum Protocol {
     Ssh,
     WireGuard,
     Tun,
+    Custom,
 }
 
 /// Transport type
@@ -144,7 +145,7 @@ pub struct TunSettings {
     pub include_package: Vec<String>,
     pub exclude_package: Vec<String>,
     pub platform: Option<TunPlatform>,
-    // Deprecated fields (included for completeness but typically not used)
+    // Deprecated fields (included for completeness but typically not used in new format)
     pub inet4_address: Vec<String>,
     pub inet6_address: Vec<String>,
     pub inet4_route_address: Vec<String>,
@@ -237,6 +238,9 @@ pub struct Server {
     // Metadata
     pub subscription_id: Option<String>,
     pub latency_ms: Option<u32>,
+    
+    // For Custom protocol (JSON configs)
+    pub json_config: Option<String>,
 }
 
 /// A subscription source

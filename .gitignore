@@ -13,3 +13,4 @@ src-tauri/pcores/*.dll
 .env.*
 x2j/
 dev/
+bpb.json

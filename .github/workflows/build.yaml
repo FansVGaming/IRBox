@@ -17,22 +17,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, windows-arm64, macos-latest]
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+          - os: windows-arm64
+            target: aarch64-pc-windows-msvc
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
           - os: macos-latest
             target: x86_64-apple-darwin
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Clone IRBox repository
-        run: |
-          git clone https://github.com/frank-vpl/IRBox.git
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -58,16 +62,13 @@ jobs:
         run: brew install webkit2png
 
       - name: Install frontend dependencies
-        working-directory: IRBox
         run: npm install
 
       - name: Install Tauri CLI
-        working-directory: IRBox
         run: cargo install tauri-cli --version "^2"
 
       - name: Download core executables (Linux/macOS)
-        if: matrix.os != 'windows-latest'
-        working-directory: IRBox
+        if: matrix.os != 'windows-latest' && matrix.os != 'windows-arm64'
         run: |
           chmod +x cores.sh
           echo "Running cores.sh for target: ${{ matrix.target }}"
@@ -76,8 +77,7 @@ jobs:
           ls -la src-tauri/pcores/ || echo "pcores directory not found"
 
       - name: Download core executables (Windows)
-        if: matrix.os == 'windows-latest'
-        working-directory: IRBox
+        if: matrix.os == 'windows-latest' || matrix.os == 'windows-arm64'
         run: |
           echo "Running cores.bat for target: ${{ matrix.target }}"
           ./cores.bat ${{ matrix.target }}
@@ -90,8 +90,7 @@ jobs:
         shell: pwsh
 
       - name: Verify pcores before build (Linux/macOS)
-        if: matrix.os != 'windows-latest'
-        working-directory: IRBox
+        if: matrix.os != 'windows-latest' && matrix.os != 'windows-arm64'
         run: |
           echo "Checking pcores directory before build:"
           if [ -d "src-tauri/pcores" ]; then
@@ -116,8 +115,7 @@ jobs:
           fi
 
       - name: Verify pcores before build (Windows)
-        if: matrix.os == 'windows-latest'
-        working-directory: IRBox
+        if: matrix.os == 'windows-latest' || matrix.os == 'windows-arm64'
         run: |
           echo "Checking pcores directory before build:"
           if (Test-Path "src-tauri\pcores") {
@@ -143,7 +141,6 @@ jobs:
         shell: pwsh
 
       - name: Build Tauri app
-        working-directory: IRBox
         run: cargo tauri build --target ${{ matrix.target }}
 
       - name: Upload artifacts
@@ -151,7 +148,7 @@ jobs:
         with:
           name: ${{ matrix.os }}-artifacts
           path: |
-            IRBox/src-tauri/target/${{ matrix.target }}/release/bundle/**
+            src-tauri/target/${{ matrix.target }}/release/bundle/**
           retention-days: 30
 
   release:
@@ -206,7 +203,7 @@ jobs:
             
             ### Assets
             This release includes installers/packages for:
-            - Windows (x86_64)
+            - Windows (x86_64 and ARM64)
             - macOS (Intel and Apple Silicon)
             - Linux (x86_64 and ARM64)
             

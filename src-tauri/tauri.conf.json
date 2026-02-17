@@ -41,7 +41,9 @@
     ],
     "externalBin": [
       "pcores/sing-box",
-      "pcores/xray"
+      "pcores/xray",
+      "pcores/geoip.dat",
+      "pcores/geosite.dat"
     ],
     "license": "GPL-3.0",
     "licenseFile": "../LICENSE",
