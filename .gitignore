@@ -2,8 +2,7 @@ node_modules/
 package-lock.json
 dist/
 src-tauri/target/
-src-tauri/pcores/*.exe
-src-tauri/pcores/*.dll
+src-tauri/pcores/
 .vscode/
 .idea/
 *.swp
