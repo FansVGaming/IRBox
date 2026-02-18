@@ -28,15 +28,6 @@ Designed for privacy-conscious users, IRBox offers multi-protocol support, advan
 - **SSH**
 - **WireGuard**
 
-## 🎁 Gift: Free Xray / sing-box Configs
-
-As a small gift to the community, IRBox provides a **free public subscription** compatible with **Xray** and **sing-box** clients.
-
-🔗 **Subscription URL:**
-```
-https://raw.githubusercontent.com/frank-vpl/servers/refs/heads/main/irbox
-```
-
 ### Advanced Management
 - **Subscription Support** - Import and auto-update subscription URLs
 - **Routing Rules** - Domain-based rules (proxy/direct/block) with presets for ad blocking and regional bypass
@@ -53,6 +44,15 @@ https://raw.githubusercontent.com/frank-vpl/servers/refs/heads/main/irbox
 - **Auto-select Best Server** - Intelligent server selection
 - **Themes** - 2 color themes (Dark, Light)
 - **Styles** - Default, Minimal
+
+## 🎁 Gift: Free Xray / sing-box Configs
+
+As a small gift to the community, IRBox provides a **free public subscription** compatible with **Xray** and **sing-box** clients.
+
+🔗 **Subscription URL:**
+```
+https://raw.githubusercontent.com/frank-vpl/servers/refs/heads/main/irbox
+```
 
 ## 🛠️ Installation
 
